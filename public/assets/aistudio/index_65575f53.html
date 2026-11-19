@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ToolNest — Every online tool, in glass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..650&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:#050507;color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+html{scrollbar-width:thin;scrollbar-color:#2a2a31 #050507}
+a{color:inherit;text-decoration:none}
+#gl{position:fixed;left:0;top:0;width:100%;height:100%;display:block;z-index:0}
+.layer{position:fixed;left:0;top:0;z-index:1;transform-origin:0 0;visibility:hidden;pointer-events:none}
+.layer.on{visibility:visible}
+.layer>*{position:absolute;margin:0;color:transparent;white-space:pre;text-decoration:none;pointer-events:none}
+.layer a{pointer-events:auto;cursor:pointer;display:block}
+.layer .sel{pointer-events:auto}
+.layer ::selection{background:rgba(64,120,255,.55);color:transparent}
+/* definitions / categories view */
+#view{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .25s}
+#view.on{opacity:1;transition:opacity .4s;pointer-events:auto}
+#col{position:absolute;left:6%;right:6%;top:15.5%;bottom:3%;overflow:auto;scrollbar-width:none;padding:2px 2px 24px}
+#col::-webkit-scrollbar{display:none}
+#col h2{margin:0 0 0 24%;font-weight:650;font-size:clamp(22px,1.7vw,34px);letter-spacing:-.025em;line-height:1.15;background:linear-gradient(#f2f2f5,#bdbdc3);-webkit-background-clip:text;background-clip:text;color:transparent;min-height:11vh}
+#col .cg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:0;align-items:start}
+#col .cg .shard:first-child{grid-column:span 2}
+#col .shard .in{padding:18px 20px 20px}
+#col .shard .top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+#col .shard h4{margin:0;font-size:19px;background:linear-gradient(#f2f2f5,#c4c4cc);-webkit-background-clip:text;background-clip:text;color:transparent}
+#col .shard p{margin:0 0 14px;font-size:13.5px;line-height:1.5}
+#col .chips{display:flex;flex-wrap:wrap;gap:8px}
+#col .chip{--cut:8px;position:relative;display:inline-block;padding:1px;color:inherit;text-decoration:none;
+  background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,.07) 40%,rgba(185,171,255,.32));
+  clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));transition:transform .15s,background .15s}
+#col .chip span{display:block;padding:9px 16px;font-size:14px;color:rgba(255,255,255,.88);background:linear-gradient(160deg,#25252c,#101013 75%);
+  clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)))}
+#col .chip:hover,#col .chip:focus-visible{transform:translateY(-2px);background:linear-gradient(135deg,rgba(120,255,190,.8),rgba(185,171,255,.45))}
+#col .chip:hover span,#col .chip:focus-visible span{color:#fff;background:linear-gradient(160deg,#2c3a35,#101316 75%)}
+#col .chip:focus-visible{outline:none}
+#col .foot{margin-top:18px;display:flex;flex-wrap:wrap;align-items:center;gap:14px;font-size:12.5px;line-height:1.6;color:rgba(255,255,255,.38)}
+#col .foot a.chip span{font-size:13px;padding:8px 16px}
+@media(max-width:900px){#col .cg{grid-template-columns:repeat(2,1fr)}#col .cg .shard:first-child{grid-column:span 2}}
+@media(max-width:700px){#col{left:4%;right:4%;top:14%}#col h2{margin-left:0;min-height:0;margin-bottom:14px;font-size:22px}#col .cg{grid-template-columns:1fr}#col .cg .shard:first-child{grid-column:auto}}
+@media(max-height:700px) and (min-width:701px){#col h2{min-height:12vh}}
+#back{position:fixed;z-index:3;transform:translate(-50%,-50%);background:none;border:0;padding:0;color:#fff;font:500 max(12px,.66vw) Inter,system-ui,sans-serif;cursor:pointer;opacity:0;pointer-events:none;transition:color .15s,opacity .2s}
+#back.on{opacity:1;pointer-events:auto}
+#back:hover{color:#b9abff}
+/* static fallback */
+#fb{display:none;padding:24px;background:radial-gradient(900px 500px at 20% 0%,#1a1a22,#050507);position:relative;z-index:6}
+body.fb #fb{display:block}
+body.fb #gl,body.fb .layer,body.fb #view,body.fb #back,body.fb #spacer{display:none}
+#fb nav{display:flex;justify-content:space-between;padding:16px 22px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:#17171b;max-width:1100px;margin:0 auto 14px}
+#fb h1{font-weight:500;font-size:clamp(40px,8vw,96px);letter-spacing:-.045em;line-height:.97;margin:60px auto 18px;max-width:1100px;background:linear-gradient(#dcdce0,#bdbdc3);-webkit-background-clip:text;background-clip:text;color:transparent}
+#fb p.s{max-width:1100px;margin:0 auto 28px;color:rgba(255,255,255,.55)}
+#fb .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;max-width:1100px;margin:0 auto}
+#fb .c{padding:22px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:#17171b}
+#fb .c b{display:block;font-weight:500;margin-bottom:6px}
+#fb .c span{color:rgba(255,255,255,.45);font-size:14px}
+
+:root{--bg:#050507;--line:rgba(255,255,255,.1);--mut:rgba(255,255,255,.55);--green:#36d67e;--lav:#b9abff}
+#spacer{height:100vh}
+#content{position:relative;z-index:5;background:radial-gradient(900px 420px at 12% 0%,#17151f,transparent 70%),radial-gradient(800px 420px at 100% 20%,#12131c,transparent 70%),var(--bg);}
+#content:before{content:"";position:absolute;left:8%;right:8%;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(185,171,255,.55),transparent)}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+.crumb{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:14px}
+.lead{color:var(--mut);max-width:640px;line-height:1.6;margin:0}
+.tag{display:inline-block;font-size:11px;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+.tag.ok{color:var(--green);border-color:rgba(54,214,126,.4)}.tag.srv{color:var(--lav);border-color:rgba(185,171,255,.4)}
+.brand{display:flex;align-items:center;gap:12px;font-weight:500}
+.brand i{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,#f2f2f5,#9b9ba6);position:relative}
+.brand i:after{content:"";position:absolute;left:3px;right:3px;top:50%;height:2px;background:#17171b;transform:rotate(-38deg)}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 24px;border-radius:7px;border:0;background:#ececef;color:#0b0b0d;font:500 15px Inter,system-ui,sans-serif;cursor:pointer}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="navL" class="layer"></div>
+<div id="panL" class="layer"></div>
+<div id="view"><div id="col"></div></div>
+<button id="back" aria-label="Back">← Back</button>
+
+<nav class="stick" id="stick" aria-label="Sections">
+  <a class="brand" href="#" onclick="scrollTo({top:0,behavior:'smooth'});return false"><i></i>ToolNest</a>
+  <a href="#cat-pdf">PDF</a><a href="#cat-yt">YouTube</a><a href="#cat-ig">Instagram</a><a href="#cat-tt">TikTok</a><a href="#cat-img">Images</a><a href="#about">About</a>
+</nav>
+<div id="fb">
+  <nav><b>ToolNest</b><span>Sign in</span></nav>
+  <h1>Every tool,<br>in glass.</h1>
+  <p class="s">PDF, video and image tools in one place. Fast, free and no signup.</p>
+  <div class="g">
+    <div class="c"><b>PDF Tools</b><span>Merge · Split · Compress · Convert</span></div>
+    <div class="c"><b>YouTube Tools</b><span>MP3 · MP4 · Thumbnails</span></div>
+    <div class="c"><b>Instagram Tools</b><span>Reels · Video · Photo · Story</span></div>
+    <div class="c"><b>TikTok Tools</b><span>Video · No watermark · MP3</span></div>
+    <div class="c"><b>Image Tools</b><span>Compress · Resize · Remove BG</span></div>
+  </div>
+</div>
+
+<div id="spacer"></div>
+<div id="content">
+  <section class="wrap sec" id="tools">
+    <div class="crumb">The toolbox</div>
+    <h2 class="big">Every tool,<br>in its own glass.</h2>
+    <p class="lead">Five categories, twenty tools. PDF and image tools run privately in your browser; the YouTube, Instagram and TikTok tools run on the ToolNest server.</p>
+    <div id="tools-root"></div>
+  </section>
+
+  <section class="wrap sec" id="how">
+    <div class="crumb">How it works</div>
+    <h2 class="big">Three steps.<br>No account.</h2>
+    <div class="steps">
+      <div class="shard"><div class="in"><span class="num">01</span><h4>Pick a tool</h4><p>Choose a category — PDF, YouTube, Instagram, TikTok or Images — and open the tool you need.</p></div></div>
+      <div class="shard"><div class="in"><span class="num">02</span><h4>Add a file or a link</h4><p>Drop a PDF or image, or paste the link to a video you have the right to save.</p></div></div>
+      <div class="shard"><div class="in"><span class="num">03</span><h4>Download the result</h4><p>Your converted file is ready in seconds. Nothing to install and nothing to sign up for.</p></div></div>
+    </div>
+  </section>
+
+  <section class="wrap sec" id="about">
+    <div class="crumb">About</div>
+    <h2 class="big">About ToolNest</h2>
+    <div class="about">
+      <div class="shard"><div class="in">
+        <h4>One small toolbox for everyday file jobs</h4>
+        <p>ToolNest brings the tools people reach for every day into one place: merge or split a PDF, shrink a photo, turn a video you own into an MP3. Instead of hunting through a dozen different sites, you get five clear categories, every tool in the same calm smoked-glass interface, and no accounts or sign-ups.</p>
+        <p style="margin-top:12px">It is built to be fast and honest about what it does. The PDF and image tools run entirely inside your browser, so your files stay on your device. The video tools need a server to fetch and convert media, and we say so on the page.</p>
+      </div></div>
+      <div class="shard"><div class="in">
+        <h4>Good to know</h4>
+        <p><b style="color:#fff;font-weight:500">Private by design.</b> PDF and image tools never upload your files.</p>
+        <p style="margin-top:10px"><b style="color:#fff;font-weight:500">Short-lived downloads.</b> Converted media is deleted from the server after 30 minutes.</p>
+        <p style="margin-top:10px"><b style="color:#fff;font-weight:500">Use it responsibly.</b> Only download content you own or have permission to use; we ask you to confirm every time.</p>
+        <p style="margin-top:10px"><b style="color:#fff;font-weight:500">Honest limits.</b> Scanned PDFs need OCR, which is not supported. Remove Background works best on plain backgrounds. PDF ↔ Word keeps text only.</p>
+        <p style="margin-top:10px"><b style="color:#fff;font-weight:500">Anonymous counts.</b> We count how often each tool is used, and nothing about you.</p>
+      </div></div>
+    </div>
+  </section>
+
+  <footer class="siteft">
+    <div class="brand" style="color:#fff;margin-bottom:10px"><i></i>ToolNest</div>
+    © ToolNest Lab · Free online PDF, image and media tools. ToolNest is not affiliated with YouTube, Instagram, TikTok or any other platform named on this site; those names are used only to describe what a tool works with.
+    <div style="margin-top:8px;opacity:.6">Build glass-view-3</div>
+  </footer>
+</div>
+<script src="firebase.js"></script>
+<script src="tools.js"></script>
+<script type="module">
+const $ = s => document.querySelector(s);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let THREE, RoomEnvironment;
+try {
+  if (reduce) throw 0;
+  THREE = await import('three');
+  ({ RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js'));
+} catch (e) { document.body.classList.add('fb'); THREE = null; }
+if (THREE) { try { await start(); } catch (e) { console.error(e); document.body.classList.add('fb'); } }
+
+async function start() {
+/* ------------------------------------------------------------------ data */
+const CATS = [
+  { id: 'pdf', name: 'PDF Tools', icon: 'pdf', sub: 'Merge · Split · Compress',
+    tools: ['Merge PDF', 'Split PDF', 'Compress PDF', 'PDF to Word', 'Word to PDF', 'JPG to PDF', 'Rotate PDF', 'Unlock PDF'] },
+  { id: 'yt', name: 'YouTube Tools', icon: 'play', sub: 'MP3 · MP4 · Thumbnails',
+    tools: ['YouTube to MP3', 'YouTube to MP4', 'Shorts Downloader', 'Thumbnail Downloader'] },
+  { id: 'ig', name: 'Instagram Tools', icon: 'camera', sub: 'Reels · Video',
+    tools: ['Instagram Video Downloader', 'Reels Downloader'] },
+  { id: 'tt', name: 'TikTok Tools', icon: 'note', sub: 'Video · MP3',
+    tools: ['TikTok Video Downloader', 'TikTok to MP3'] },
+  { id: 'img', name: 'Image Tools', icon: 'image', sub: 'Compress · Resize',
+    tools: ['Compress Image', 'Resize Image', 'Convert Image', 'Remove Background'] }
+];
+const DESC = {
+  pdf: 'Merge, split, compress, convert and unlock documents.',
+  yt: 'Turn a video you have rights to into MP3, MP4 or a thumbnail.',
+  ig: 'Save public videos and reels you have permission to use.',
+  tt: 'Save videos or sounds you have permission to use.',
+  img: 'Compress, resize, convert and clear the background of pictures.'
+};
+const SL = {'Merge PDF':'merge-pdf','Split PDF':'split-pdf','Compress PDF':'compress-pdf','PDF to Word':'pdf-to-word','Word to PDF':'word-to-pdf','JPG to PDF':'jpg-to-pdf','Rotate PDF':'rotate-pdf','Unlock PDF':'unlock-pdf','YouTube to MP3':'youtube-to-mp3','YouTube to MP4':'youtube-to-mp4','Shorts Downloader':'shorts-downloader','Thumbnail Downloader':'thumbnail-downloader','Instagram Video Downloader':'instagram-video','Reels Downloader':'reels-downloader','TikTok Video Downloader':'tiktok-video','TikTok to MP3':'tiktok-to-mp3','Compress Image':'compress-image','Resize Image':'resize-image','Convert Image':'convert-image','Remove Background':'remove-background'};
+$('#col').innerHTML = '<h2>Five categories, every tool.</h2><div class="cg">' +
+  CATS.map(c => `<div class="shard"><div class="in"><div class="top"><h4>${c.name}</h4><span class="tag">${c.tools.length} tools</span></div><p>${DESC[c.id]}</p><div class="chips">${c.tools.map(t => `<a class="chip" href="tool.html?t=${SL[t] || ''}"><span>${t}</span></a>`).join('')}</div></div></div>`).join('') +
+  '</div><div class="foot"><span>Only download or convert content you own or have permission to use.</span><a class="chip" href="tool.html"><span>Browse the full directory →</span></a></div>';
+
+/* ------------------------------------------------------------------ state */
+const D = Math.PI / 180;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+let W, H, S, bw, bh, navH, navGap, pw, ph, pcy, ncy, gap, portrait, dpr;
+const mouse = { x: 0, y: 0, sx: 0, sy: 0, inside: false };
+let hovId = null;
+let mode = 'back', t0 = 0, t1 = 0, slS = 0;
+const now = () => performance.now() / 1000;
+
+/* ------------------------------------------------------------------ renderer */
+const canvas = $('#gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setClearColor(0x050507, 1);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.42;
+const key = new THREE.DirectionalLight(0xdbe6ff, 1.1);
+key.position.set(-500, 700, 900);
+scene.add(key);
+const camera = new THREE.PerspectiveCamera(30, 1, 10, 9000);
+const slab = new THREE.Group();
+scene.add(slab);
+
+const U = { uPtr: { value: new THREE.Vector3() }, uGlow: { value: 0 }, uS: { value: 1 } };
+function glass(glow, irid) {
+  const m = new THREE.MeshPhysicalMaterial({
+    color: 0x17171b, roughness: .36, clearcoat: .7, clearcoatRoughness: .12, specularIntensity: .7,
+    iridescence: irid, iridescenceIOR: 1.3, iridescenceThicknessRange: [250, 650], envMapIntensity: 1
+  });
+  if (glow) {
+    m.onBeforeCompile = sh => {
+      sh.uniforms.uPtr = U.uPtr; sh.uniforms.uGlow = U.uGlow; sh.uniforms.uS = U.uS;
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWP=(modelMatrix*vec4(transformed,1.)).xyz;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;\nuniform vec3 uPtr;uniform float uGlow;uniform float uS;')
+        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n{float d=distance(vWP.xy,uPtr.xy)/(300.*uS);totalEmissiveRadiance+=vec3(.42,.37,.62)*.16*exp(-1.6*d*d)*uGlow;}');
+    };
+    m.customProgramCacheKey = () => 'glow';
+  }
+  return m;
+}
+
+/* ------------------------------------------------------------------ canvas content */
+const mctx = document.createElement('canvas').getContext('2d');
+const FONT = (w, s) => `${w} ${s}px Inter, system-ui, sans-serif`;
+function tw(text, s, w, ls) { mctx.font = FONT(w, s); mctx.letterSpacing = (ls * s) + 'px'; return mctx.measureText(text).width; }
+const mn = (v, m) => Math.max(v, m);
+
+function layoutPanel() {
+  const it = []; const A = o => it.push(o);
+  const cardW = 300 * S;
+  const card = (c, x, y) => {
+    const is = mn(46 * S, 30), ts = mn(30 * S, 19), ss = mn(19 * S, 12.5), id = 'c_' + c.id;
+    if (!portrait) {
+      const th = ts * 1.25, sh = ss * 1.4, h = is + 12 * S + th + 4 + sh;
+      A({ t: 'hit', id, x, y, w: cardW, h, act: 'all' });
+      A({ t: 'icon', k: c.icon, x, y, s: is, hf: id });
+      A({ t: 'text', text: c.name, x, y: y + is + 12 * S, s: ts, w: 500, c: 'rgba(255,255,255,.9)', hc: '#fff', lh: th, hf: id, arrow: 1 });
+      A({ t: 'text', text: c.sub, x, y: y + is + 12 * S + th + 4, s: ss, w: 400, c: 'rgba(255,255,255,.45)', lh: sh });
+    } else {
+      const th = ts * 1.25, sh = ss * 1.4, tx = x + is + 14;
+      A({ t: 'hit', id, x, y: y - 6, w: pw * .86, h: 42, act: 'all' });
+      A({ t: 'icon', k: c.icon, x, y, s: is, hf: id });
+      A({ t: 'text', text: c.name, x: tx, y: y + (is - th - sh) / 2, s: ts, w: 500, c: 'rgba(255,255,255,.9)', hc: '#fff', lh: th, hf: id, arrow: 1 });
+      A({ t: 'text', text: c.sub, x: tx, y: y + (is - th - sh) / 2 + th, s: ss, w: 400, c: 'rgba(255,255,255,.45)', lh: sh });
+    }
+  };
+  if (!portrait) {
+    const x0 = .045 * pw;
+    A({ t: 'text', text: 'ONLINE TOOLS STUDIO', x: x0, y: .1 * ph, s: mn(13 * S, 10), w: 500, c: 'rgba(255,255,255,.38)', ls: .2, lh: 16, sel: 1 });
+    const hs = Math.min(.078 * pw, .2 * ph);
+    A({ t: 'text', text: 'Every tool,\nin glass.', x: x0, y: .19 * ph, s: hs, w: 500, ls: -.045, lh: hs * .97, grad: ['#dcdce0', '#bdbdc3'], sel: 1 });
+    const ss = mn(21 * S, 13);
+    A({ t: 'text', text: 'PDF, video and image tools in one place.\nFast, free and no signup — pick a category and go.', x: x0, y: .56 * ph, s: ss, w: 400, c: 'rgba(255,255,255,.55)', lh: ss * 1.55, sel: 1 });
+    const pwid = mn(170 * S, 118), phh = mn(54 * S, 38), py = .73 * ph;
+    A({ t: 'pill', id: 'cta', text: 'Start now', x: x0, y: py, w: pwid, h: phh, r: 6, s: mn(20 * S, 14), act: 'start' });
+    const ls = mn(21 * S, 14);
+    A({ t: 'text', id: 'all', text: 'All categories →', x: x0 + pwid + 28 * S, y: py + phh / 2 - ls * .65, s: ls, w: 400, c: 'rgba(255,255,255,.6)', hc: '#fff', ul: 1, lh: ls * 1.3, act: 'all' });
+    card(CATS[0], .335 * pw, .04 * ph);
+    card(CATS[1], .565 * pw, .075 * ph);
+    card(CATS[4], .56 * pw, .31 * ph);
+    card(CATS[2], .5 * pw, .745 * ph);
+    card(CATS[3], .815 * pw, .3 * ph);
+    A({ t: 'text', text: '© ToolNest Lab', x: .02 * pw, y: .945 * ph, s: mn(11 * S, 10), w: 400, c: 'rgba(255,255,255,.34)', lh: 14 });
+    A({ t: 'text', text: 'Scroll down for all tools ↓', x: .98 * pw, y: .945 * ph, s: mn(11 * S, 10), w: 400, c: 'rgba(255,255,255,.34)', lh: 14, al: 'right' });
+  } else {
+    const x0 = .07 * pw, hs = Math.min(.14 * pw, 54);
+    A({ t: 'text', text: 'ONLINE TOOLS STUDIO', x: x0, y: 20, s: 10, w: 500, c: 'rgba(255,255,255,.38)', ls: .2, lh: 14, sel: 1 });
+    A({ t: 'text', text: 'Every tool,\nin glass.', x: x0, y: 42, s: hs, w: 500, ls: -.045, lh: hs * .97, grad: ['#dcdce0', '#bdbdc3'], sel: 1 });
+    const sy = 42 + hs * .97 * 2 + 10, py = sy + 38 + 12;
+    A({ t: 'text', text: 'PDF, video and image tools\nin one place. Fast and free.', x: x0, y: sy, s: 13.5, w: 400, c: 'rgba(255,255,255,.55)', lh: 19, sel: 1 });
+    A({ t: 'pill', id: 'cta', text: 'Start now', x: x0, y: py, w: 116, h: 38, r: 6, s: 14, act: 'start' });
+    A({ t: 'text', id: 'all', text: 'All categories →', x: x0 + 116 + 20, y: py + 10, s: 14, w: 400, c: 'rgba(255,255,255,.6)', hc: '#fff', ul: 1, lh: 18, act: 'all' });
+    const yc = i => (PB.yL[i] + PB.yL[i + 1] + PB.yR[i] + PB.yR[i + 1]) / 4 * ph;
+    card(CATS[0], x0, yc(1) - 29 - 15); card(CATS[1], x0, yc(1) + 29 - 15);
+    card(CATS[4], x0, yc(2) - 15); card(CATS[2], x0, yc(3) - 15); card(CATS[3], x0, yc(4) - 15);
+    A({ t: 'text', text: '© ToolNest Lab', x: .04 * pw, y: .955 * ph, s: 10, w: 400, c: 'rgba(255,255,255,.34)', lh: 14 });
+  }
+  return it;
+}
+function layoutNav() {
+  const it = []; const A = o => it.push(o);
+  const ms = mn(24 * S, 18), mx = mn(36 * S, 16), my = navH / 2, s = mn(22 * S, 15), ls = mn(20 * S, 14);
+  A({ t: 'mark', x: mx, y: my - ms / 2, s: ms });
+  A({ t: 'text', text: 'ToolNest', x: mx + ms + 12 * S + 4, y: my - s * .65, s, w: 500, c: 'rgba(255,255,255,.92)', lh: s * 1.3, sel: 1 });
+  if (!portrait) {
+    let x = .4 * pw;
+    [['PDF', 'cat-pdf'], ['Video', 'cat-yt'], ['Images', 'cat-img'], ['All tools', 'tools']].forEach(([k, tgt]) => {
+      A({ t: 'text', id: 'n_' + k, text: k, x, y: my - ls * .65, s: ls, w: 400, c: 'rgba(255,255,255,.6)', hc: '#fff', lh: ls * 1.3, act: 'go:' + tgt });
+      x += tw(k, ls, 400, 0) + 44 * S;
+    });
+  }
+  A({ t: 'text', id: 'n_sign', text: portrait ? 'All tools' : 'About', x: pw - mx, y: my - ls * .65, s: ls, w: 400, c: 'rgba(255,255,255,.7)', hc: '#fff', lh: ls * 1.3, al: 'right', act: portrait ? 'go:tools' : 'go:about' });
+  return it;
+}
+
+function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+function icon(c, k, x, y, s, a) {
+  c.save(); c.translate(x, y);
+  c.lineJoin = c.lineCap = 'round'; c.lineWidth = Math.max(1.4, s * .045);
+  rr(c, 0, 0, s, s, s * .24); c.fillStyle = 'rgba(255,255,255,.05)'; c.fill();
+  c.strokeStyle = `rgba(255,255,255,${.28 + a * .3})`; c.stroke();
+  c.strokeStyle = `rgba(255,255,255,${.6 + a * .35})`; c.fillStyle = c.strokeStyle;
+  const P = (u, v) => [u * s, v * s];
+  c.beginPath();
+  if (k === 'pdf') {
+    c.moveTo(...P(.3, .22)); c.lineTo(...P(.58, .22)); c.lineTo(...P(.72, .36)); c.lineTo(...P(.72, .78)); c.lineTo(...P(.3, .78)); c.closePath();
+    c.moveTo(...P(.58, .22)); c.lineTo(...P(.58, .36)); c.lineTo(...P(.72, .36));
+    c.moveTo(...P(.38, .52)); c.lineTo(...P(.64, .52)); c.moveTo(...P(.38, .64)); c.lineTo(...P(.62, .64)); c.stroke();
+  } else if (k === 'play') {
+    rr(c, .2 * s, .28 * s, .6 * s, .44 * s, .1 * s); c.stroke();
+    c.beginPath(); c.moveTo(...P(.45, .4)); c.lineTo(...P(.45, .6)); c.lineTo(...P(.62, .5)); c.closePath(); c.fill();
+  } else if (k === 'camera') {
+    rr(c, .2 * s, .32 * s, .6 * s, .42 * s, .08 * s); c.stroke();
+    c.beginPath(); c.arc(.5 * s, .53 * s, .11 * s, 0, 7); c.stroke();
+    c.beginPath(); c.moveTo(...P(.36, .32)); c.lineTo(...P(.4, .24)); c.lineTo(...P(.6, .24)); c.lineTo(...P(.64, .32)); c.stroke();
+  } else if (k === 'note') {
+    c.moveTo(...P(.46, .66)); c.lineTo(...P(.46, .3)); c.lineTo(...P(.72, .24)); c.lineTo(...P(.72, .58)); c.stroke();
+    c.beginPath(); c.arc(.38 * s, .68 * s, .08 * s, 0, 7); c.stroke();
+    c.beginPath(); c.arc(.64 * s, .6 * s, .08 * s, 0, 7); c.stroke();
+  } else if (k === 'image') {
+    rr(c, .2 * s, .26 * s, .6 * s, .48 * s, .06 * s); c.stroke();
+    c.beginPath(); c.arc(.38 * s, .42 * s, .05 * s, 0, 7); c.stroke();
+    c.beginPath(); c.moveTo(...P(.24, .7)); c.lineTo(...P(.44, .52)); c.lineTo(...P(.56, .62)); c.lineTo(...P(.64, .55)); c.lineTo(...P(.76, .7)); c.stroke();
+  }
+  c.restore();
+}
+
+function drawFrame(cv, items, fw, fh, f) {
+  const c = cv.getContext('2d');
+  c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cv.width, cv.height); c.scale(f, f);
+  c.textBaseline = 'middle';
+  for (const it of items) {
+    const hv = hovId && (hovId === it.id || hovId === it.hf);
+    if (it.t === 'text') {
+      c.font = FONT(it.w, it.s); c.letterSpacing = ((it.ls || 0) * it.s) + 'px'; c.textAlign = it.al || 'left';
+      const lines = it.text.split('\n');
+      let col = hv && it.hc ? it.hc : it.c;
+      if (it.grad) { const g = c.createLinearGradient(0, it.y, 0, it.y + it.lh * lines.length); g.addColorStop(0, it.grad[0]); g.addColorStop(1, it.grad[1]); col = g; }
+      c.fillStyle = col;
+      lines.forEach((ln, i) => c.fillText(ln, it.x, it.y + it.lh * (i + .5)));
+      const w0 = c.measureText(lines[0]).width;
+      if (it.ul && hv) { c.fillRect(it.al === 'right' ? it.x - w0 : it.x, it.y + it.lh * .5 + it.s * .62, w0, 1); }
+      if (it.arrow && hv) { c.font = FONT(400, it.s); c.fillStyle = '#36d67e'; c.fillText('→', it.x + w0 + it.s * .5, it.y + it.lh * .5); }
+    } else if (it.t === 'pill') {
+      rr(c, it.x, it.y, it.w, it.h, it.r); c.fillStyle = hv ? '#36d67e' : '#ececef'; c.fill();
+      c.font = FONT(500, it.s); c.letterSpacing = '0px'; c.textAlign = 'center'; c.fillStyle = '#0b0b0d';
+      c.fillText(it.text, it.x + it.w / 2, it.y + it.h / 2 + 1);
+    } else if (it.t === 'icon') icon(c, it.k, it.x, it.y, it.s, hv ? 1 : 0);
+    else if (it.t === 'mark') {
+      const g = c.createLinearGradient(it.x, it.y, it.x + it.s, it.y + it.s); g.addColorStop(0, '#f2f2f5'); g.addColorStop(1, '#9b9ba6');
+      rr(c, it.x, it.y, it.s, it.s, it.s * .22); c.fillStyle = g; c.fill();
+      c.strokeStyle = '#17171b'; c.lineWidth = Math.max(1.5, it.s * .08);
+      c.beginPath(); c.moveTo(it.x + it.s * .18, it.y + it.s * .72); c.lineTo(it.x + it.s * .78, it.y + it.s * .24); c.stroke();
+    }
+  }
+}
+
+function goTo(id) { const e = document.getElementById(id); if (e) e.scrollIntoView({ behavior: 'smooth' }); }
+/* DOM text layer (transparent, selectable, real hit areas) */
+function buildDom(layer, items, fw, fh) {
+  layer.innerHTML = ''; layer.style.width = fw + 'px'; layer.style.height = fh + 'px';
+  for (const it of items) {
+    let el;
+    if (it.t === 'text') {
+      el = document.createElement(it.act ? 'a' : 'span');
+      el.textContent = it.text;
+      el.style.font = FONT(it.w, it.s); el.style.lineHeight = it.lh + 'px'; el.style.letterSpacing = ((it.ls || 0) * it.s) + 'px';
+      el.style.top = it.y + 'px';
+      if (it.al === 'right') { el.style.right = (fw - it.x) + 'px'; el.style.textAlign = 'right'; } else el.style.left = it.x + 'px';
+      if (it.sel) el.className = 'sel';
+    } else if (it.t === 'pill') {
+      el = document.createElement('a'); el.textContent = it.text; el.style.left = it.x + 'px'; el.style.top = it.y + 'px';
+      el.style.width = it.w + 'px'; el.style.height = it.h + 'px';
+    } else if (it.t === 'hit') {
+      el = document.createElement('a'); el.style.left = it.x + 'px'; el.style.top = it.y + 'px'; el.style.width = it.w + 'px'; el.style.height = it.h + 'px';
+    } else continue;
+    if (it.act) {
+      el.href = '#'; el.setAttribute('role', 'button');
+      if (it.id) { el.onmouseenter = () => setHover(it.id); el.onmouseleave = () => setHover(null); el.onfocus = () => setHover(it.id); el.onblur = () => setHover(null); }
+      el.onclick = e => { e.preventDefault(); if (it.act === 'all') openView(); else if (it.act === 'start') goTo('tools'); else if (it.act.startsWith('go:')) goTo(it.act.slice(3)); };
+    }
+    layer.appendChild(el);
+  }
+}
+
+/* ------------------------------------------------------------------ geometry helpers */
+function area(p) { let a = 0; for (let i = 0; i < p.length; i++) { const q = p[(i + 1) % p.length]; a += p[i][0] * q[1] - q[0] * p[i][1]; } return a / 2; }
+function ccw(p) { return area(p) < 0 ? p.slice().reverse() : p; }
+function inset(p, d) {
+  const n = p.length, o = [];
+  for (let i = 0; i < n; i++) {
+    const a = p[(i + n - 1) % n], b = p[i], c = p[(i + 1) % n];
+    let d1 = [b[0] - a[0], b[1] - a[1]], d2 = [c[0] - b[0], c[1] - b[1]];
+    const l1 = Math.hypot(...d1) || 1, l2 = Math.hypot(...d2) || 1;
+    d1 = [d1[0] / l1, d1[1] / l1]; d2 = [d2[0] / l2, d2[1] / l2];
+    const n1 = [-d1[1], d1[0]], n2 = [-d2[1], d2[0]], k = 1 + n1[0] * n2[0] + n1[1] * n2[1];
+    o.push([b[0] + (n1[0] + n2[0]) * d / k, b[1] + (n1[1] + n2[1]) * d / k]);
+  }
+  return o;
+}
+function centroid(p) { let x = 0, y = 0; p.forEach(v => { x += v[0]; y += v[1]; }); return [x / p.length, y / p.length]; }
+function roundedShape(q, r) {
+  const sh = new THREE.Shape(), n = q.length;
+  for (let i = 0; i < n; i++) {
+    const a = q[(i + n - 1) % n], b = q[i], c = q[(i + 1) % n];
+    const l1 = Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, l2 = Math.hypot(c[0] - b[0], c[1] - b[1]) || 1;
+    const rad = Math.min(r, l1 * .45, l2 * .45);
+    const sx = b[0] + (a[0] - b[0]) / l1 * rad, sy = b[1] + (a[1] - b[1]) / l1 * rad;
+    const ex = b[0] + (c[0] - b[0]) / l2 * rad, ey = b[1] + (c[1] - b[1]) / l2 * rad;
+    if (i === 0) sh.moveTo(sx, sy); else sh.lineTo(sx, sy);
+    sh.quadraticCurveTo(b[0], b[1], ex, ey);
+  }
+  sh.closePath(); return sh;
+}
+function makeGeo(poly, inl, fw, fh) {
+  const dep = 13 * S, bt = 2.6 * S, bs = 2.6 * S;
+  const q = inset(ccw(poly), inl + bs), c = centroid(q);
+  const qr = q.map(v => [v[0] - c[0], v[1] - c[1]]);
+  const shape = roundedShape(qr, 20 * S);
+  const g = new THREE.ExtrudeGeometry(shape, { depth: dep, bevelEnabled: true, bevelThickness: bt, bevelSize: bs, bevelOffset: 0, bevelSegments: 3, curveSegments: 5 });
+  const og = new THREE.ShapeGeometry(shape, 5);
+  const pos = og.attributes.position, uv = og.attributes.uv;
+  for (let i = 0; i < pos.count; i++) uv.setXY(i, (pos.getX(i) + c[0] + fw / 2) / fw, (pos.getY(i) + c[1] + fh / 2) / fh);
+  let hx = 1, hy = 1; qr.forEach(v => { hx = Math.max(hx, Math.abs(v[0])); hy = Math.max(hy, Math.abs(v[1])); });
+  return { g, og, c, hx, hy, top: dep + bt };
+}
+
+/* ------------------------------------------------------------------ pieces */
+const BASE = { TL: [0, 0, 0], TR: [1, 0, 0], BL: [0, 1, 0], BR: [1, 1, 0], t0: [.22, 0, 1], t1: [.515, 0, 1], t2: [.84, 0, 1], b0: [.34, 1, 1], b1: [.865, 1, 1], J0: [.385, .72, 2], J1: [.48, .62, 2], J2: [.716, .49, 2] };
+const KEYS = Object.keys(BASE);
+const CELLS = [['TL', 't0', 'J0', 'b0', 'BL'], ['t0', 't1', 'J1', 'J0'], ['t1', 't2', 'J2', 'J1'], ['J0', 'J1', 'J2', 'b1', 'b0'], ['t2', 'TR', 'BR', 'b1', 'J2']];
+const PB = { yL: [0, .385, .605, .725, .845, 1], yR: [0, .37, .62, .715, .855, 1] }; // portrait: five slanted horizontal bands
+const PH = {}; KEYS.forEach((k, i) => { PH[k] = { px: 10 + (i * 1.9) % 10, py: 11 + (i * 2.3) % 9, a: i * 1.3, b: i * .8 + 1 }; });
+const pieces = [];
+const glassMeshes = [];
+function rnd(a, b) { return a + Math.random() * (b - a); }
+function mkPiece(nav, idx) {
+  const mat = glass(true, .55);
+  const mesh = new THREE.Mesh(new THREE.BufferGeometry(), mat);
+  const ovm = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, toneMapped: false });
+  const ov = new THREE.Mesh(new THREE.BufferGeometry(), ovm); ov.renderOrder = 2;
+  mesh.add(ov);
+  const holder = new THREE.Group(); holder.add(mesh); slab.add(holder);
+  const p = { nav, idx, mat, mesh, ov, ovm, holder, hover: 0, z: 0, vz: 0, rx: 0, vrx: 0, ry: 0, vry: 0, tipx: 0, tipy: 0, c: [0, 0], hx: 1, hy: 1, fy: 0,
+    delay: 0, axis: new THREE.Vector3(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)).normalize(), tumble: rnd(2, 3.6) * (Math.random() < .5 ? -1 : 1),
+    sx: rnd(.5, 1), sy: rnd(.2, .7), sz: rnd(420, 800) };
+  mesh.userData.p = p; glassMeshes.push(mesh); pieces.push(p); return p;
+}
+const navP = mkPiece(true, 0);
+CELLS.forEach((_, i) => mkPiece(false, i + 1));
+pieces.forEach((p, i) => { p.order = i; });
+
+function setGeo(p, r, fy) {
+  p.mesh.geometry.dispose(); p.ov.geometry.dispose();
+  p.mesh.geometry = r.g; p.ov.geometry = r.og; p.ov.position.z = r.top + .8;
+  p.c = r.c; p.hx = r.hx; p.hy = r.hy; p.fy = fy;
+}
+function cellPts(t) {
+  const P = {};
+  KEYS.forEach(k => {
+    let [x, y, kind] = BASE[k]; const h = PH[k];
+    if (kind > 0) x += .03 * Math.sin(2 * Math.PI * t / h.px + h.a);
+    if (kind === 2) y += .05 * Math.sin(2 * Math.PI * t / h.py + h.b);
+    P[k] = [x, y, kind];
+  });
+  return P;
+}
+function rebuildCells(t) {
+  if (portrait) {
+    const yy = (arr, i, ph0) => arr[i] + (i > 0 && i < 5 ? .006 * Math.sin(2 * Math.PI * t / (11 + i * 1.7) + i * 1.3 + ph0) : 0);
+    const L = [], R = [];
+    for (let i = 0; i < 6; i++) { L.push([-pw / 2, (.5 - yy(PB.yL, i, 0)) * ph]); R.push([pw / 2, (.5 - yy(PB.yR, i, 2.1)) * ph]); }
+    CELLS.forEach((_, i) => setGeo(pieces[i + 1], makeGeo([L[i], R[i], R[i + 1], L[i + 1]], gap / 2, pw, ph), pcy));
+    return;
+  }
+  const P = cellPts(t);
+  const pn = { x: (mouse.sx - W / 2) / pw + .5, y: (mouse.sy - (H / 2 - pcy)) / ph + .5 };
+  KEYS.forEach(k => {
+    let [x, y, kind] = P[k];
+    if (portrait) { const tx = x; x = y; y = tx; }
+    if (kind === 2 && mouse.inside) {
+      const dx = x - pn.x, dy = y - pn.y, d = Math.hypot(dx, dy);
+      if (d < .6 && d > 1e-4) { const f = .05 * Math.pow(1 - d / .6, 1.5); x += dx / d * f; y += dy / d * f; }
+    }
+    P[k] = [(x - .5) * pw, (.5 - y) * ph];
+  });
+  CELLS.forEach((cell, i) => {
+    const p = pieces[i + 1];
+    setGeo(p, makeGeo(cell.map(k => P[k]), gap / 2, pw, ph), pcy);
+  });
+}
+function rebuildNav() {
+  const w = pw / 2, h = navH / 2;
+  setGeo(navP, makeGeo([[-w, -h], [w, -h], [w, h], [-w, h]], 0, pw, navH), ncy);
+}
+
+/* ------------------------------------------------------------------ canvases + layout */
+let panelCv = document.createElement('canvas'), navCv = document.createElement('canvas');
+let panelItems, navItems, f = 1.5;
+function redraw() {
+  drawFrame(panelCv, panelItems, pw, ph, f); drawFrame(navCv, navItems, pw, navH, f);
+  if (panelP.ovm.map) panelTex.needsUpdate = true; navTex.needsUpdate = true;
+}
+let panelTex, navTex; const panelP = pieces[1];
+function setHover(id) { if (hovId === id) return; hovId = id; redraw(); }
+
+function resize() {
+  W = document.documentElement.clientWidth; H = innerHeight; const sp = $('#spacer'); if (sp) sp.style.height = H + 'px'; dpr = Math.min(devicePixelRatio || 1, 2);
+  portrait = W < H * .9 || W < 700;
+  const mx = portrait ? 16 : W * .055, my = portrait ? 16 : H * .085;
+  bw = W - 2 * mx; bh = H - 2 * my; S = portrait ? bw / 760 : bw / 1730;
+  navGap = portrait ? 10 : 14; navH = portrait ? Math.min(.108 * bh, 60) : .108 * bh;
+  pw = bw; ph = bh - navH - navGap; gap = 14 * S;
+  pcy = -bh / 2 + ph / 2; ncy = bh / 2 - navH / 2;
+  renderer.setPixelRatio(dpr); renderer.setSize(W, H, false);
+  camera.aspect = W / H; camera.position.set(0, 0, (H / 2) / Math.tan(15 * D)); camera.updateProjectionMatrix();
+  U.uS.value = S;
+  f = clamp(Math.max(1.5, dpr), 1.5, 2);
+  panelCv.width = Math.round(pw * f); panelCv.height = Math.round(ph * f);
+  navCv.width = Math.round(pw * f); navCv.height = Math.round(navH * f);
+  panelItems = layoutPanel(); navItems = layoutNav();
+  if (panelTex) { panelTex.dispose(); navTex.dispose(); }
+  panelTex = new THREE.CanvasTexture(panelCv); navTex = new THREE.CanvasTexture(navCv);
+  [panelTex, navTex].forEach(t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; });
+  pieces.forEach(p => { p.ovm.map = p.nav ? navTex : panelTex; p.ovm.needsUpdate = true; });
+  redraw();
+  buildDom($('#panL'), panelItems, pw, ph); buildDom($('#navL'), navItems, pw, navH);
+  rebuildNav(); rebuildCells(now()); buildSliver();
+}
+
+/* ------------------------------------------------------------------ back sliver */
+const sl = { holder: new THREE.Group(), mesh: null, hx: 1, hy: 1, lab: [0, 0], hover: false, rx: 0, ry: 0 };
+sl.mat = glass(false, .35);
+scene.add(sl.holder);
+function buildSliver() {
+  const k = W / 1918;
+  const fr = portrait ? [[.05, .06], [.36, .04], [.39, .09], [.06, .105]] : [[.147, .243], [.252, .169], [.287, .277], [.151, .258]];
+  const pts = fr.map(v => [v[0] * W - W / 2, H / 2 - v[1] * H]);
+  const c = centroid(pts), qr = ccw(pts).map(v => [v[0] - c[0], v[1] - c[1]]);
+  const g = new THREE.ExtrudeGeometry(roundedShape(qr, 10 * Math.max(k, .5)), { depth: 11 * Math.max(k, .5), bevelEnabled: true, bevelThickness: 2.4 * Math.max(k, .5), bevelSize: 2.4 * Math.max(k, .5), bevelSegments: 3, curveSegments: 5 });
+  if (sl.mesh) { sl.mesh.geometry.dispose(); sl.holder.remove(sl.mesh); }
+  sl.mesh = new THREE.Mesh(g, sl.mat); sl.holder.add(sl.mesh); sl.holder.position.set(c[0], c[1], 0);
+  sl.c = c; qr.forEach(v => { sl.hx = Math.max(sl.hx, Math.abs(v[0])); sl.hy = Math.max(sl.hy, Math.abs(v[1])); });
+  const lab = portrait ? [.22, .075] : [.219, .238];
+  sl.lab = [lab[0] * W, lab[1] * H];
+  const b = $('#back'); b.style.left = sl.lab[0] + 'px'; b.style.top = sl.lab[1] + 'px'; b.style.width = (portrait ? .26 : .09) * W + 'px'; b.style.height = (portrait ? .05 : .07) * H + 'px';
+}
+$('#back').onmouseenter = () => sl.hover = true;
+$('#back').onmouseleave = () => sl.hover = false;
+$('#back').onclick = closeView;
+
+/* ------------------------------------------------------------------ view transitions */
+const viewEl = $('#view');
+function openView() {
+  if (mode !== 'assembled') return;
+  mode = 'shatter'; t0 = now(); setHover(null); scrollTo(0, 0); document.documentElement.style.overflow = 'hidden';
+  setTimeout(() => { if (mode === 'shatter' || mode === 'shattered') viewEl.classList.add('on'); }, 280);
+}
+function closeView() {
+  if (mode !== 'shattered') return;
+  viewEl.classList.remove('on'); $('#back').classList.remove('on'); mode = 'back'; t1 = now(); document.documentElement.style.overflow = '';
+}
+addEventListener('keydown', e => { if (e.key === 'Escape') closeView(); });
+const easeOutBack = t => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+
+/* ------------------------------------------------------------------ homography for the text layers */
+function homography(w, h, p) {
+  const src = [[0, 0], [w, 0], [w, h], [0, h]], A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = src[i], [u, v] = p[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+  }
+  const n = 8;
+  for (let i = 0; i < n; i++) {
+    let m = i; for (let r = i + 1; r < n; r++) if (Math.abs(A[r][i]) > Math.abs(A[m][i])) m = r;
+    [A[i], A[m]] = [A[m], A[i]]; [b[i], b[m]] = [b[m], b[i]];
+    for (let r = i + 1; r < n; r++) { const k = A[r][i] / A[i][i]; for (let c = i; c < n; c++) A[r][c] -= k * A[i][c]; b[r] -= k * b[i]; }
+  }
+  const x = new Array(n);
+  for (let i = n - 1; i >= 0; i--) { let s = b[i]; for (let c = i + 1; c < n; c++) s -= A[i][c] * x[c]; x[i] = s / A[i][i]; }
+  const [a, bb, c, d, e, ff, g, hh] = x;
+  return `matrix3d(${a},${d},0,${g},${bb},${e},0,${hh},0,0,1,0,${c},${ff},0,1)`;
+}
+const _v = new THREE.Vector3();
+function mapLayer(el, w, h, cy, z) {
+  const cs = [[-w / 2, cy + h / 2], [w / 2, cy + h / 2], [w / 2, cy - h / 2], [-w / 2, cy - h / 2]].map(([x, y]) => {
+    _v.set(x, y, z); slab.localToWorld(_v); _v.project(camera); return [(_v.x + 1) / 2 * W, (1 - _v.y) / 2 * H];
+  });
+  el.style.transform = homography(w, h, cs);
+}
+
+/* ------------------------------------------------------------------ input */
+addEventListener('pointermove', e => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.inside = true; });
+addEventListener('pointerdown', e => { mouse.x = e.clientX; mouse.y = e.clientY; mouse.inside = true; });
+document.addEventListener('pointerleave', () => mouse.inside = false);
+addEventListener('blur', () => mouse.inside = false);
+addEventListener('resize', resize);
+const stick = $('#stick'); addEventListener('scroll', () => stick.classList.toggle('on', scrollY > H * .8), { passive: true });
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+let hoverP = null; const hitPt = new THREE.Vector3();
+
+/* ------------------------------------------------------------------ loop */
+function spring(p, k, target, dt) {
+  const kk = 170, cc = 19; let x = p[k], v = p['v' + k];
+  const n = Math.ceil(dt / (1 / 120)), h = dt / n;
+  for (let i = 0; i < n; i++) { v += (kk * (target - x) - cc * v) * h; x += v * h; }
+  p[k] = x; p['v' + k] = v;
+}
+const tilt = { x: 0, y: 0 }; let last = now(), accum = 0, glow = 0, pushSm = 0;
+function frame() {
+  if (scrollY > H * 1.02) { last = now(); requestAnimationFrame(frame); return; }
+  const tN = now(), dt = Math.min(.05, tN - last); last = tN;
+  mouse.sx += (mouse.x - mouse.sx) * (1 - Math.exp(-dt / .08)); mouse.sy += (mouse.y - mouse.sy) * (1 - Math.exp(-dt / .08));
+  const k3 = 1 - Math.exp(-dt / .3);
+  const nx = mouse.inside ? clamp(mouse.x / W * 2 - 1, -1, 1) : 0, ny = mouse.inside ? clamp(mouse.y / H * 2 - 1, -1, 1) : 0;
+  tilt.x += (nx - tilt.x) * k3; tilt.y += (ny - tilt.y) * k3;
+  slab.rotation.y = tilt.x * 7 * D - 1.2 * D; slab.rotation.x = tilt.y * 5.5 * D - .8 * D;
+  slab.updateMatrixWorld(true);
+  glow += ((mouse.inside ? 1 : 0) - glow) * (1 - Math.exp(-dt / .25)); U.uGlow.value = glow;
+  U.uPtr.value.set(mouse.sx - W / 2, H / 2 - mouse.sy, 0);
+
+  accum += dt; if (accum >= 1 / 45) { accum = 0; rebuildCells(tN); }
+
+  // hover pick
+  let hp = null;
+  if (mode === 'assembled' && mouse.inside) {
+    ndc.set(mouse.x / W * 2 - 1, -(mouse.y / H) * 2 + 1); ray.setFromCamera(ndc, camera);
+    const hit = ray.intersectObjects(glassMeshes, false)[0];
+    if (hit) { hp = hit.object.userData.p; hitPt.copy(hit.point); slab.worldToLocal(hitPt); }
+  }
+  hoverP = hp;
+  pieces.forEach(p => {
+    const on = p === hp;
+    p.hover += ((on ? 1 : 0) - p.hover) * (1 - Math.exp(-dt / .12));
+    let ty = 0, tx = 0;
+    if (on) { const dx = hitPt.x - p.c[0], dy = hitPt.y - (p.c[1] + p.fy); ty = clamp(dx / p.hx, -1, 1) * .24; tx = -clamp(dy / p.hy, -1, 1) * .24; }
+    spring(p, 'z', on ? (p.nav ? 32 : 50) * S : 0, dt); spring(p, 'ry', ty, dt); spring(p, 'rx', tx, dt);
+    p.mesh.position.z = p.z; p.mesh.rotation.set(p.rx, p.ry, 0);
+    p.mat.iridescence = .55 + .45 * p.hover; p.mat.envMapIntensity = 1 + .9 * p.hover;
+  });
+
+  // shatter / return animation
+  let allDone = true;
+  pieces.forEach(p => {
+    let pp = 0;
+    if (mode === 'shatter' || mode === 'shattered') {
+      const tau = clamp((tN - t0 - p.order * .035) / .72, 0, 1); pp = tau * tau * tau; if (tau < 1) allDone = false;
+    } else if (mode === 'back') {
+      const tau = clamp((tN - t1 - .1 - p.order * .03) / .72, 0, 1); pp = 1 - easeOutBack(tau); if (tau < 1) allDone = false;
+    }
+    const cx = p.c[0], cy = p.c[1] + p.fy;
+    let dx = cx, dy = cy - (p.nav ? 0 : pcy); const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+    if (p.nav) { dx = 0; dy = 1; }
+    const sp = 900 * S * (p.nav ? 1.1 : 1);
+    p.holder.position.set(cx + dx * sp * p.sx * pp, cy + dy * sp * p.sx * pp - (500 * S * p.sy * pp * pp) - 300 * S * p.sy * pp, p.sz * S * pp);
+    p.holder.quaternion.setFromAxisAngle(p.axis, p.tumble * pp);
+    p.holder.visible = !((mode === 'shatter' || mode === 'shattered') && pp >= .999);
+  });
+  if (mode === 'shatter' && allDone) mode = 'shattered';
+  if (mode === 'back' && allDone) mode = 'assembled';
+
+  // sliver
+  if (mode === 'shatter' || mode === 'shattered') slS = easeOutBack(clamp((tN - t0 - .3) / .5, 0, 1));
+  else if (mode === 'back') { const u = clamp((tN - t1) / .25, 0, 1); slS = Math.min(1, slS) * (1 - u) ; if (u >= 1) slS = 0; }
+  else slS = 0;
+  slS = Math.max(0, slS);
+  sl.holder.visible = slS > .002; sl.holder.scale.setScalar(Math.max(slS, .0001));
+  let ty = 0, tx = 0;
+  if (sl.hover) { const dx = mouse.x - sl.lab[0], dy = -(mouse.y - sl.lab[1]); ty = clamp(dx / (sl.hx), -1, 1) * .14; tx = -clamp(dy / sl.hy, -1, 1) * .14; }
+  sl.ry = (sl.ry || 0) + (ty - sl.ry) * (1 - Math.exp(-dt / .12)); sl.rx = (sl.rx || 0) + (tx - sl.rx) * (1 - Math.exp(-dt / .12));
+  sl.holder.rotation.set(.08 + sl.rx + .03 * Math.sin(2 * Math.PI * .9 * tN + 1), -.16 + sl.ry + .035 * Math.sin(2 * Math.PI * tN), 0);
+  $('#back').classList.toggle('on', mode === 'shattered' && slS > .6);
+
+  // DOM text layers
+  const show = mode === 'assembled';
+  $('#panL').classList.toggle('on', show); $('#navL').classList.toggle('on', show);
+  if (show) {
+    const top = 13 * S + 2.6 * S + .9;
+    mapLayer($('#panL'), pw, ph, pcy, top); mapLayer($('#navL'), pw, navH, ncy, top);
+  }
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+try { await Promise.race([Promise.all([document.fonts.load('500 20px Inter'), document.fonts.load('400 16px Inter'), document.fonts.load('650 20px Inter')]), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
+mode = 'back'; t1 = now() + .1;
+resize();
+requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>

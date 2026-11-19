@@ -1,0 +1,6 @@
+{
+  "name": "ToolNest",
+  "description": "All-in-one smoked-glass online tool suite for PDF, image, and media processing with Firebase user authentication and tool history.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

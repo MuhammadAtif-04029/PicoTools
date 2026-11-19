@@ -1,0 +1,8 @@
+{
+  "name": "toolnest",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ToolNest — online PDF, image and media tools with a smoked-glass UI",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}
